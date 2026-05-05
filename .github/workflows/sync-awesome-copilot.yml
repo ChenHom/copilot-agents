@@ -1,0 +1,122 @@
+## 參考來源：
+## https://github.com/doggy8088/github-copilot-configs/blob/main/.github/workflows/sync-awesome-copilot.yml
+
+name: 同步 Awesome GitHub Copilot 檔案
+
+on:
+  schedule:
+    # 每天 UTC 00:00 執行 (台北時間早上 8:00)
+    - cron: '0 0 * * *'
+  workflow_dispatch: # 允許手動觸發
+
+jobs:
+  sync-awesome-copilot:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout 目前的 repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 配置 Git 使用者資訊
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: 建立臨時目錄
+        run: mkdir -p /tmp/awesome-copilot
+
+      - name: Clone Awesome GitHub Copilot repository
+        run: |
+          git clone --depth 1 https://github.com/github/awesome-copilot.git /tmp/awesome-copilot
+
+      - name: 同步 chatmodes 資料夾
+        run: |
+          # 移除舊的資料夾並建立新的
+          rm -rf chatmodes .github/chatmodes
+          mkdir -p .github/chatmodes
+
+          # 複製檔案
+          if [ -d "/tmp/awesome-copilot/chatmodes" ]; then
+            cp -r /tmp/awesome-copilot/chatmodes/* .github/chatmodes/
+            echo "✅ 成功同步 chatmodes 資料夾"
+          else
+            echo "⚠️ 來源 chatmodes 資料夾不存在"
+          fi
+
+      - name: 同步 instructions 資料夾
+        run: |
+          # 移除舊的資料夾並建立新的
+          rm -rf instructions .github/instructions
+          mkdir -p .github/instructions
+
+          # 複製檔案
+          if [ -d "/tmp/awesome-copilot/instructions" ]; then
+            cp -r /tmp/awesome-copilot/instructions/* .github/instructions/
+            echo "✅ 成功同步 instructions 資料夾"
+          else
+            echo "⚠️ 來源 instructions 資料夾不存在"
+          fi
+
+      - name: 同步 prompts 資料夾
+        run: |
+          # 移除舊的資料夾並建立新的
+          rm -rf prompts .github/prompts
+          mkdir -p .github/prompts
+
+          # 複製檔案
+          if [ -d "/tmp/awesome-copilot/prompts" ]; then
+            cp -r /tmp/awesome-copilot/prompts/* .github/prompts/
+            echo "✅ 成功同步 prompts 資料夾"
+          else
+            echo "⚠️ 來源 prompts 資料夾不存在"
+          fi
+
+      - name: 同步 agents 資料夾
+        run: |
+          # 移除舊的資料夾並建立新的
+          rm -rf agents .github/agents
+          mkdir -p .github/agents
+
+          # 複製檔案
+          if [ -d "/tmp/awesome-copilot/agents" ]; then
+            cp -r /tmp/awesome-copilot/agents/* .github/agents/
+            echo "✅ 成功同步 agents 資料夾"
+          else
+            echo "⚠️ 來源 agents 資料夾不存在"
+          fi
+
+      - name: 清理臨時檔案
+        run: rm -rf /tmp/awesome-copilot
+
+      - name: 檢查是否有變更
+        id: changes
+        run: |
+          git add .
+          if git diff --staged --quiet; then
+            echo "no_changes=true" >> $GITHUB_OUTPUT
+            echo "📍 沒有檔案變更"
+          else
+            echo "no_changes=false" >> $GITHUB_OUTPUT
+            echo "📝 發現檔案變更"
+            git status --porcelain
+          fi
+
+      - name: 提交並推送變更
+        if: steps.changes.outputs.no_changes == 'false'
+        run: |
+          git commit -m "🔄 自動同步 Awesome GitHub Copilot 檔案 $(date +'%Y-%m-%d %H:%M:%S')"
+          git push
+          echo "🚀 變更已成功推送"
+
+      - name: 顯示同步結果
+        run: |
+          echo "🎉 同步作業完成！"
+          echo "📊 檔案統計："
+          echo "   chatmodes: $(find .github/chatmodes -name '*.md' 2>/dev/null | wc -l) 個檔案"
+          echo "   instructions: $(find .github/instructions -name '*.md' 2>/dev/null | wc -l) 個檔案"
+          echo "   prompts: $(find .github/prompts -name '*.md' 2>/dev/null | wc -l) 個檔案"
+          echo "   agents: $(find .github/agents -name '*.md' 2>/dev/null | wc -l) 個檔案"
