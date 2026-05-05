@@ -108,6 +108,7 @@ jobs:
       - name: 提交並推送變更
         if: steps.changes.outputs.no_changes == 'false'
         run: |
+          git remote set-url origin "https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git"
           git commit -m "🔄 自動同步 Awesome GitHub Copilot 檔案 $(date +'%Y-%m-%d %H:%M:%S')"
           git push
           echo "🚀 變更已成功推送"
