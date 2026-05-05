@@ -19,7 +19,7 @@ jobs:
       - name: Checkout 目前的 repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_TOKEN }}
 
       - name: 配置 Git 使用者資訊
         run: |
